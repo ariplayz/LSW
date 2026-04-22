@@ -1,0 +1,131 @@
+syntax = "proto3";
+
+package lsw.control.v1;
+
+service LswControl {
+  rpc ListVMs(ListVMsRequest) returns (ListVMsResponse);
+  rpc CreateVM(CreateVMRequest) returns (CreateVMResponse);
+  rpc ImportVM(ImportVMRequest) returns (ImportVMResponse);
+  rpc ExportVM(ExportVMRequest) returns (ExportVMResponse);
+  rpc StartVM(StartVMRequest) returns (StartVMResponse);
+  rpc StopVM(StopVMRequest) returns (StopVMResponse);
+  rpc TerminateVM(TerminateVMRequest) returns (TerminateVMResponse);
+  rpc GetVMInfo(GetVMInfoRequest) returns (GetVMInfoResponse);
+  rpc SetDefaultVM(SetDefaultVMRequest) returns (SetDefaultVMResponse);
+  rpc SnapshotVM(SnapshotVMRequest) returns (SnapshotVMResponse);
+  rpc RestoreSnapshot(RestoreSnapshotRequest) returns (RestoreSnapshotResponse);
+  rpc ListSnapshots(ListSnapshotsRequest) returns (ListSnapshotsResponse);
+  rpc ShareAdd(ShareAddRequest) returns (ShareAddResponse);
+  rpc ShareRemove(ShareRemoveRequest) returns (ShareRemoveResponse);
+  rpc ListShares(ListSharesRequest) returns (ListSharesResponse);
+  rpc RunCommandInVM(RunCommandInVMRequest) returns (stream RunCommandChunk);
+  rpc GetStatus(GetStatusRequest) returns (GetStatusResponse);
+}
+
+message VmInfo {
+  string id = 1;
+  string name = 2;
+  string state = 3;
+  uint32 memory_mb = 4;
+  uint32 cpus = 5;
+  string disk_path = 6;
+  uint32 ssh_forward_port = 7;
+  bool is_default = 8;
+  repeated Share shares = 9;
+}
+
+message Share {
+  string host_path = 1;
+  string guest_path = 2;
+  string mode = 3;
+  string backend_preference = 4;
+}
+
+message ListVMsRequest {}
+message ListVMsResponse { repeated VmInfo vms = 1; }
+
+message CreateVMRequest {
+  string name = 1;
+  uint32 memory_mb = 2;
+  uint32 cpus = 3;
+  uint64 disk_size_mb = 4;
+}
+message CreateVMResponse { VmInfo vm = 1; }
+
+message ImportVMRequest {
+  string name = 1;
+  string qcow2_path = 2;
+}
+message ImportVMResponse { VmInfo vm = 1; }
+
+message ExportVMRequest {
+  string name = 1;
+  string output_path = 2;
+}
+message ExportVMResponse { string task_id = 1; }
+
+message StartVMRequest { string name = 1; }
+message StartVMResponse { VmInfo vm = 1; }
+
+message StopVMRequest { string name = 1; }
+message StopVMResponse { VmInfo vm = 1; }
+
+message TerminateVMRequest { string name = 1; }
+message TerminateVMResponse { VmInfo vm = 1; }
+
+message GetVMInfoRequest { string name = 1; }
+message GetVMInfoResponse { VmInfo vm = 1; }
+
+message SetDefaultVMRequest { string name = 1; }
+message SetDefaultVMResponse { VmInfo vm = 1; }
+
+message SnapshotVMRequest {
+  string name = 1;
+  string snapshot_name = 2;
+}
+message SnapshotVMResponse { string task_id = 1; }
+
+message RestoreSnapshotRequest {
+  string name = 1;
+  string snapshot_name = 2;
+}
+message RestoreSnapshotResponse { string task_id = 1; }
+
+message ListSnapshotsRequest { string name = 1; }
+message ListSnapshotsResponse { repeated string snapshots = 1; }
+
+message ShareAddRequest {
+  string name = 1;
+  Share share = 2;
+}
+message ShareAddResponse { VmInfo vm = 1; }
+
+message ShareRemoveRequest {
+  string name = 1;
+  string guest_path = 2;
+}
+message ShareRemoveResponse { VmInfo vm = 1; }
+
+message ListSharesRequest { string name = 1; }
+message ListSharesResponse { repeated Share shares = 1; }
+
+message RunCommandInVMRequest {
+  string name = 1;
+  repeated string command = 2;
+}
+
+message RunCommandChunk {
+  oneof kind {
+    bytes stdout = 1;
+    bytes stderr = 2;
+    int32 exit_code = 3;
+  }
+}
+
+message GetStatusRequest {}
+
+message GetStatusResponse {
+  uint64 daemon_started_unix = 1;
+  uint32 vm_total = 2;
+  uint32 vm_running = 3;
+}

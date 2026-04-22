@@ -1,0 +1,83 @@
+name: release
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-release:
+    runs-on: ubuntu-latest
+    env:
+      CARGO_TERM_COLOR: always
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Install packaging dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y rpm ruby ruby-dev build-essential
+          sudo gem install --no-document fpm
+
+      - name: Build release artifacts
+        run: |
+          chmod +x scripts/ci/build-release-artifacts.sh
+          scripts/ci/build-release-artifacts.sh
+
+      - name: Resolve release metadata
+        id: metadata
+        run: |
+          VERSION="$(awk -F ' = ' '/^version = / { gsub(/"/, "", $2); print $2; exit }' Cargo.toml)"
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+          echo "repo_owner=${GITHUB_REPOSITORY_OWNER}" >> "$GITHUB_OUTPUT"
+          echo "repo_name=${GITHUB_REPOSITORY#*/}" >> "$GITHUB_OUTPUT"
+
+      - name: Generate Arch PKGBUILD and .SRCINFO
+        run: |
+          chmod +x scripts/ci/generate-arch-pkgbuild.sh
+          scripts/ci/generate-arch-pkgbuild.sh \
+            "${{ steps.metadata.outputs.version }}" \
+            "${{ steps.metadata.outputs.repo_owner }}" \
+            "${{ steps.metadata.outputs.repo_name }}" \
+            "lsw-${{ steps.metadata.outputs.version }}-x86_64-unknown-linux-gnu.tar.gz" \
+            "dist/arch"
+
+      - name: Upload CI artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: lsw-release-artifacts
+          path: |
+            dist/*.tar.gz
+            dist/*.deb
+            dist/*.rpm
+            dist/arch/PKGBUILD
+            dist/arch/.SRCINFO
+
+      - name: Publish GitHub Release assets
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            dist/*.tar.gz
+            dist/*.deb
+            dist/*.rpm
+            dist/arch/PKGBUILD
+            dist/arch/.SRCINFO
+
+      - name: Publish PKGBUILD to AUR
+        if: startsWith(github.ref, 'refs/tags/') && secrets.AUR_SSH_PRIVATE_KEY != ''
+        env:
+          AUR_SSH_PRIVATE_KEY: ${{ secrets.AUR_SSH_PRIVATE_KEY }}
+          AUR_GIT_URL: ${{ secrets.AUR_GIT_URL }}
+          AUR_PACKAGE_NAME: ${{ secrets.AUR_PACKAGE_NAME }}
+        run: |
+          chmod +x scripts/ci/publish-aur.sh
+          scripts/ci/publish-aur.sh

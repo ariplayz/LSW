@@ -72,3 +72,19 @@ Example host-driven agent sequence:
 
 - This repository does not ship Windows media or preinstalled images.
 - Bring your own Windows ISO/qcow2 and perform guest-side preparation manually (see `docs/security.md`).
+
+## GitHub Actions release pipeline
+
+- Workflow: `.github/workflows/release.yml`
+- Trigger: manual (`workflow_dispatch`) or pushed tags matching `v*`.
+- Builds and publishes:
+  - Linux tarball with binaries (`lsw`, `lswd`)
+  - Debian package (`.deb`)
+  - RPM package (`.rpm`)
+  - Arch files (`PKGBUILD`, `.SRCINFO`)
+
+Optional AUR publishing from CI (tag runs only):
+
+- `AUR_SSH_PRIVATE_KEY` (required)
+- `AUR_PACKAGE_NAME` (optional, default: `lsw-bin`)
+- `AUR_GIT_URL` (optional, default: `ssh://aur@aur.archlinux.org/<pkg>.git`)

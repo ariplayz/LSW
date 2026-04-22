@@ -1,0 +1,13 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://lsw.local/schemas/agent_messages.schema.json",
+  "title": "LSW agent message",
+  "type": "object",
+  "required": ["type"],
+  "properties": {
+    "type": { "type": "string" },
+    "token": { "type": "string" },
+    "payload": { "type": "object" }
+  },
+  "additionalProperties": true
+}

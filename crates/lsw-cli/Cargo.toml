@@ -1,6 +1,15 @@
 [package]
 name = "lsw-cli"
-version = "0.1.0"
-edition = "2024"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
 
 [dependencies]
+anyhow.workspace = true
+clap.workspace = true
+futures.workspace = true
+lsw-lib = { path = "../lsw-lib" }
+tokio.workspace = true
+tonic.workspace = true
+tower = "0.5"
+hyper-util = { version = "0.1", features = ["tokio"] }

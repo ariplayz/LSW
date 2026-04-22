@@ -1,14 +1,11 @@
-pub fn add(left: u64, right: u64) -> u64 {
-    left + right
-}
-
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use lsw_lib::config::LswConfig;
 
     #[test]
-    fn it_works() {
-        let result = add(2, 2);
-        assert_eq!(result, 4);
+    fn defaults_are_sane() {
+        let cfg = LswConfig::default();
+        assert!(cfg.defaults.memory_mb >= 1024);
+        assert!(cfg.defaults.cpus >= 1);
     }
 }

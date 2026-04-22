@@ -1,9 +1,7 @@
 use std::collections::HashMap;
 use std::net::TcpListener;
-use std::path::PathBuf;
 use std::pin::Pin;
 use std::sync::Arc;
-use std::time::Duration;
 
 use anyhow::{Context, Result};
 use chrono::Utc;
@@ -12,7 +10,6 @@ use lsw_lib::paths::LswPaths;
 use lsw_lib::proto::lsw_control_server::{LswControl, LswControlServer};
 use lsw_lib::proto::*;
 use lsw_lib::vm::{VmRecord, VmShare, VmState};
-use tokio::io::AsyncWriteExt;
 use tokio::sync::RwLock;
 use tokio_stream::wrappers::UnixListenerStream;
 use tonic::{Request, Response, Status};
@@ -101,11 +98,11 @@ type RunStream = Pin<Box<dyn Stream<Item = Result<RunCommandChunk, Status>> + Se
 
 #[tonic::async_trait]
 impl LswControl for Daemon {
-    type RunCommandInVmStream = RunStream;
+    type RunCommandInVMStream = RunStream;
 
-    async fn list_vms(&self, _: Request<ListVmsRequest>) -> Result<Response<ListVmsResponse>, Status> {
+    async fn list_v_ms(&self, _: Request<ListVMsRequest>) -> Result<Response<ListVMsResponse>, Status> {
         let vms = self.vms.read().await;
-        Ok(Response::new(ListVmsResponse {
+        Ok(Response::new(ListVMsResponse {
             vms: vms.values().map(Self::to_proto).collect(),
         }))
     }
@@ -254,7 +251,7 @@ impl LswControl for Daemon {
         }))
     }
 
-    async fn run_command_in_vm(&self, request: Request<RunCommandInVmRequest>) -> Result<Response<Self::RunCommandInVmStream>, Status> {
+    async fn run_command_in_vm(&self, request: Request<RunCommandInVmRequest>) -> Result<Response<Self::RunCommandInVMStream>, Status> {
         let req = request.into_inner();
         let joined = req.command.join(" ");
         let stream = tokio_stream::iter(vec![

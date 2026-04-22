@@ -1,0 +1,12 @@
+[Unit]
+Description=LSW per-user daemon
+After=network.target
+
+[Service]
+Type=simple
+ExecStart=/usr/lib/lsw/lswd
+Restart=on-failure
+RestartSec=2
+
+[Install]
+WantedBy=default.target

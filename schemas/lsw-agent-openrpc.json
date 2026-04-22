@@ -1,0 +1,68 @@
+{
+  "openrpc": "1.2.6",
+  "info": {
+    "title": "LSW Windows Agent RPC",
+    "version": "0.1.0",
+    "description": "JSON-RPC 2.0 methods over length-prefixed framing (4-byte LE length + UTF-8 JSON) on virtio-serial channel org.lsw.agent"
+  },
+  "methods": [
+    {
+      "name": "handshake",
+      "params": [{ "name": "token", "schema": { "type": "string" } }],
+      "result": {
+        "name": "result",
+        "schema": {
+          "type": "object",
+          "required": ["ok", "agent_version", "capabilities"],
+          "properties": {
+            "ok": { "type": "boolean" },
+            "agent_version": { "type": "string" },
+            "capabilities": { "type": "array", "items": { "type": "string" } }
+          }
+        }
+      }
+    },
+    {
+      "name": "ensure_ssh",
+      "params": [
+        { "name": "public_key", "schema": { "type": "string" } },
+        { "name": "username", "schema": { "type": "string" } },
+        { "name": "allow_password", "schema": { "type": "boolean", "default": false } }
+      ],
+      "result": { "name": "result", "schema": { "type": "object" } }
+    },
+    {
+      "name": "mount_share",
+      "params": [
+        { "name": "backend", "schema": { "type": "string", "enum": ["smb", "virtio-fs", "9p"] } },
+        { "name": "tag_or_unc", "schema": { "type": "string" } },
+        { "name": "guest_path", "schema": { "type": "string" } },
+        { "name": "mode", "schema": { "type": "string", "enum": ["rw", "ro"] } },
+        { "name": "username", "schema": { "type": "string" } }
+      ],
+      "result": { "name": "result", "schema": { "type": "object" } }
+    },
+    {
+      "name": "run_cmd_shell",
+      "params": [
+        { "name": "shell", "schema": { "type": "string" } },
+        { "name": "cmd", "schema": { "type": "string" } },
+        { "name": "cwd", "schema": { "type": ["string", "null"] } },
+        { "name": "env", "schema": { "type": ["object", "null"], "additionalProperties": { "type": "string" } } }
+      ],
+      "result": {
+        "name": "result",
+        "schema": {
+          "type": "object",
+          "required": ["exit_code", "stdout", "stderr", "truncated"],
+          "properties": {
+            "exit_code": { "type": "integer" },
+            "stdout": { "type": "string" },
+            "stderr": { "type": "string" },
+            "truncated": { "type": "boolean" }
+          }
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,12 @@
+[package]
+name = "lsw-tests"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+lsw-lib = { path = "../lsw-lib" }
+lsw-qemu = { path = "../lsw-qemu" }
+
+[dev-dependencies]
+tempfile.workspace = true

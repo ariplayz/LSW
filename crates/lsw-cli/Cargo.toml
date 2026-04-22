@@ -1,0 +1,18 @@
+[package]
+name = "lsw-cli"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[[bin]]
+name = "lsw"
+path = "src/main.rs"
+
+[dependencies]
+anyhow.workspace = true
+clap.workspace = true
+hyper-util.workspace = true
+tokio.workspace = true
+tonic.workspace = true
+tower.workspace = true
+lsw-lib = { path = "../lsw-lib" }

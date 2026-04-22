@@ -1,0 +1,54 @@
+syntax = "proto3";
+
+package lsw.control;
+
+service ControlPlane {
+  rpc ImportImage (ImportImageRequest) returns (ImportImageResponse);
+  rpc Start (StartRequest) returns (StartResponse);
+  rpc Stop (StopRequest) returns (StopResponse);
+  rpc Status (StatusRequest) returns (StatusResponse);
+}
+
+message ImportImageRequest {
+  string name = 1;
+  string qcow2_path = 2;
+  uint32 ssh_port = 3;
+}
+
+message ImportImageResponse {
+  string name = 1;
+  string disk_image = 2;
+  uint32 ssh_port = 3;
+}
+
+message StartRequest {
+  string name = 1;
+}
+
+message StartResponse {
+  string name = 1;
+  bool started = 2;
+  uint32 ssh_port = 3;
+  string mount_path = 4;
+}
+
+message StopRequest {
+  string name = 1;
+}
+
+message StopResponse {
+  string name = 1;
+  bool stopped = 2;
+}
+
+message StatusRequest {
+  string name = 1;
+}
+
+message StatusResponse {
+  string name = 1;
+  bool imported = 2;
+  bool running = 3;
+  string disk_image = 4;
+  uint32 ssh_port = 5;
+}

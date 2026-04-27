@@ -1,5 +1,6 @@
 use anyhow::{Context, Result};
 use clap::{Parser, Subcommand};
+use hyper_util::rt::TokioIo;
 use lsw_lib::auth::read_token;
 use lsw_lib::paths::RuntimePaths;
 use lsw_lib::proto::control_plane_client::ControlPlaneClient;
@@ -47,7 +48,10 @@ enum Command {
 async fn connect(socket_path: std::path::PathBuf) -> Result<ControlPlaneClient<Channel>> {
     let endpoint = Endpoint::try_from("http://[::]:50051")?;
     let channel = endpoint
-        .connect_with_connector(service_fn(move |_| UnixStream::connect(socket_path.clone())))
+        .connect_with_connector(service_fn(move |_| {
+            let path = socket_path.clone();
+            async move { UnixStream::connect(path).await.map(TokioIo::new) }
+        }))
         .await?;
     Ok(ControlPlaneClient::new(channel))
 }

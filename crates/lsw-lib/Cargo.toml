@@ -9,6 +9,7 @@ build = "build.rs"
 anyhow.workspace = true
 directories.workspace = true
 hex.workspace = true
+nix.workspace = true
 prost.workspace = true
 rand.workspace = true
 serde.workspace = true

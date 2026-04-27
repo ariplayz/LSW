@@ -4,8 +4,8 @@ use lsw_lib::model::InstanceConfig;
 use lsw_lib::paths::RuntimePaths;
 use lsw_lib::proto::control_plane_server::{ControlPlane, ControlPlaneServer};
 use lsw_lib::proto::{
-    ImportImageRequest, ImportImageResponse, StartRequest, StartResponse, StatusRequest, StatusResponse,
-    StopRequest, StopResponse,
+    ImportImageRequest, ImportImageResponse, StartRequest, StartResponse, StatusRequest,
+    StatusResponse, StopRequest, StopResponse,
 };
 use lsw_qemu::{build_qemu_command, is_pid_running, read_pid, QemuVmConfig};
 use std::os::unix::fs::PermissionsExt;
@@ -16,6 +16,10 @@ use tokio_stream::wrappers::UnixListenerStream;
 use tonic::transport::Server;
 use tonic::{metadata::MetadataMap, Request, Response, Status};
 use tracing::{error, info};
+
+fn host_username() -> String {
+    whoami::username().unwrap_or_else(|_| "user".into())
+}
 
 #[derive(Clone)]
 struct Daemon {
@@ -33,7 +37,6 @@ impl Daemon {
         if supplied != self.token {
             return Err(Status::permission_denied("invalid auth token"));
         }
-
         Ok(())
     }
 
@@ -100,23 +103,30 @@ impl ControlPlane for Daemon {
         }))
     }
 
-    async fn start(&self, request: Request<StartRequest>) -> Result<Response<StartResponse>, Status> {
+    async fn start(
+        &self,
+        request: Request<StartRequest>,
+    ) -> Result<Response<StartResponse>, Status> {
         self.authorize(request.metadata())?;
         let req = request.into_inner();
         let cfg = self.load_instance(&req.name).await?;
+        let user = host_username();
 
         if self.running_state(&cfg.name) {
             return Ok(Response::new(StartResponse {
                 name: cfg.name,
                 started: false,
                 ssh_port: cfg.ssh_port as u32,
-                mount_path: format!(r"D:\\home\\{}\\", whoami::username()),
+                mount_path: format!(r"D:\home\{user}\"),
             }));
         }
 
         let pid_file = self.paths.instance_pid_path(&cfg.name);
         let log_file = self.paths.instance_log_path(&cfg.name);
-        let agent_socket = self.paths.runtime_dir.join(format!("{}.agent.sock", cfg.name));
+        let agent_socket = self
+            .paths
+            .runtime_dir
+            .join(format!("{}.agent.sock", cfg.name));
         let home = directories::BaseDirs::new()
             .ok_or_else(|| Status::internal("no home dir"))?
             .home_dir()
@@ -152,11 +162,14 @@ impl ControlPlane for Daemon {
             name: cfg.name,
             started: true,
             ssh_port: cfg.ssh_port as u32,
-            mount_path: format!(r"D:\\home\\{}\\", whoami::username()),
+            mount_path: format!(r"D:\home\{user}\"),
         }))
     }
 
-    async fn stop(&self, request: Request<StopRequest>) -> Result<Response<StopResponse>, Status> {
+    async fn stop(
+        &self,
+        request: Request<StopRequest>,
+    ) -> Result<Response<StopResponse>, Status> {
         self.authorize(request.metadata())?;
         let req = request.into_inner();
 
@@ -168,9 +181,13 @@ impl ControlPlane for Daemon {
             }));
         }
 
-        let pid = read_pid(&pid_file).map_err(|e| Status::internal(format!("read pid: {e}")))?;
-        nix::sys::signal::kill(nix::unistd::Pid::from_raw(pid), nix::sys::signal::Signal::SIGTERM)
-            .map_err(|e| Status::internal(format!("stop vm: {e}")))?;
+        let pid =
+            read_pid(&pid_file).map_err(|e| Status::internal(format!("read pid: {e}")))?;
+        nix::sys::signal::kill(
+            nix::unistd::Pid::from_raw(pid),
+            nix::sys::signal::Signal::SIGTERM,
+        )
+        .map_err(|e| Status::internal(format!("stop vm: {e}")))?;
 
         let _ = tokio::fs::remove_file(pid_file).await;
 
@@ -229,7 +246,11 @@ async fn main() -> Result<()> {
 
     let listener = UnixListener::bind(&paths.socket_path)
         .with_context(|| format!("bind socket {}", paths.socket_path.display()))?;
-    tokio::fs::set_permissions(&paths.socket_path, std::fs::Permissions::from_mode(0o600)).await?;
+    tokio::fs::set_permissions(
+        &paths.socket_path,
+        std::fs::Permissions::from_mode(0o600),
+    )
+    .await?;
 
     let svc = Daemon {
         token,

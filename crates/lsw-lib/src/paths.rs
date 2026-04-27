@@ -17,7 +17,7 @@ impl RuntimePaths {
         let base = BaseDirs::new().ok_or_else(|| anyhow!("cannot discover home directory"))?;
         let runtime_root = std::env::var("XDG_RUNTIME_DIR")
             .map(PathBuf::from)
-            .unwrap_or_else(|_| PathBuf::from(format!("/run/user/{}", nix::unistd::Uid::current())));
+            .unwrap_or_else(|_| PathBuf::from(format!("/run/user/{}", nix::unistd::getuid())));
 
         let runtime_dir = runtime_root.join("lsw");
         let state_dir = base.home_dir().join(".local/share/lsw");
